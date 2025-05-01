@@ -5,6 +5,7 @@
       nombre: string;
       precio: number;
       cantidad: number;
+      Categoria: number;
     };
   
     type ProductoEnCarrito = Producto & {
@@ -13,7 +14,7 @@
   
     // Estado
     let productos: Producto[] = [
-      { id: 1, nombre: "Producto 1", precio: 100, cantidad: 10 },
+      { id: 1, nombre: "Producto 1", precio: 100, cantidad: 10, Categoria: "Cualquiera" },
       { id: 2, nombre: "Producto 2", precio: 200, cantidad: 5 },
       { id: 3, nombre: "Producto 3", precio: 150, cantidad: 8 },
     ];
