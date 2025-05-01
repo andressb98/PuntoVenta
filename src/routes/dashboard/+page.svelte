@@ -1,186 +1,170 @@
 <script lang="ts">
-  // Datos de ejemplo - en la implementación real estos vendrían de tu store o API
-  let employerProfile = {
-      name: "Juan Pérez",
-      company: "Constructora Pérez S.A.",
-      rating: 4.5,
-      completedProjects: 12,
-      activeRequests: 3,
-      unreadMessages: 5
-  };
-
-  let recentRequests = [
-      { id: 1, title: "Diseño de casa moderna", category: "Arquitectura", date: "2023-05-15", status: "En revisión" },
-      { id: 2, title: "Reparación de tuberías", category: "Plomería", date: "2023-05-10", status: "En progreso" },
-      { id: 3, title: "Instalación eléctrica", category: "Electricidad", date: "2023-05-05", status: "Pendiente" }
-  ];
-
-  let recentMessages = [
-      { id: 1, from: "Carlos Gómez", subject: "Cotización proyecto", preview: "Hola, te envío la cotización solicitada...", read: false },
-      { id: 2, from: "María Rodríguez", subject: "Consulta sobre diseño", preview: "Tengo algunas preguntas sobre el diseño...", read: true }
-  ];
-</script>
-
-<div class="container">
-  <!-- Resumen rápido -->
-  <div class="columns">
+    // Datos simplificados para punto de venta
+    let posData = {
+      businessName: "Tienda Rápida 24/7",
+      owner: "María González",
+      todaySales: 42,
+      totalSales: 1245,
+      cashAvailable: 18500,
+      lowStockItems: 3
+    };
+  
+    let recentTransactions = [
+      { id: 1001, amount: 245.50, time: "14:32", method: "Tarjeta" },
+      { id: 1002, amount: 120.00, time: "12:15", method: "Efectivo" },
+      { id: 1003, amount: 89.75,  time: "18:45", method: "Tarjeta" }
+    ];
+  
+    let alerts = [
+      { id: 1, message: "Stock bajo: Agua Mineral (3 unidades)", urgent: true },
+      { id: 2, message: "Promoción activa: 2x1 en galletas", urgent: false }
+    ];
+  </script>
+  
+  <div class="container">
+    <div class="columns">
+      <!-- Columna izquierda - Resumen -->
       <div class="column is-4">
-          <div class="box">
-              <div class="media">
-                  <div class="media-left">
-                      <figure class="image is-64x64">
-                          <img src="/perfil/1743556814005.jpg" alt="Perfil" class="is-rounded">
-                      </figure>
-                  </div>
-                  <div class="media-content">
-                      <p class="title is-4">{employerProfile.name}</p>
-                      <p class="subtitle is-6">{employerProfile.company}</p>
-                      <div class="rating">
-                          <span class="icon has-text-warning">
-                              {#each Array(5) as _, i}
-                                  <i class="fas fa-star {i < Math.floor(employerProfile.rating) ? 'has-text-warning' : (i === Math.floor(employerProfile.rating) && employerProfile.rating % 1 >= 0.5 ? 'fa-star-half-alt has-text-warning' : 'far fa-star has-text-warning-light')}"></i>
-                              {/each}
-                          </span>
-                          <span>({employerProfile.rating})</span>
-                      </div>
-                  </div>
-              </div>
-              <hr>
-              <div class="stats">
-                  <div class="stat">
-                      <p class="heading">Ventas</p>
-                      <p class="title is-5">{employerProfile.completedProjects}</p>
-                  </div>
-                  <div class="stat">
-                      <p class="heading">Creditos</p>
-                      <p class="title is-5">{employerProfile.activeRequests}</p>
-                  </div>
-                  <div class="stat">
-                      <p class="heading">Efectivo</p>
-                      <p class="title is-5">{employerProfile.unreadMessages}</p>
-                  </div>
-              </div>
-              <a href="/employer/profile" class="button is-fullwidth is-info">
-                  Ver perfil completo
-              </a>
+        <div class="box">
+          <div class="media">
+            <div class="media-left">
+              <figure class="image is-64x64">
+                <img src="/pos-avatar.jpg" alt="Perfil" class="is-rounded">
+              </figure>
+            </div>
+            <div class="media-content">
+              <p class="title is-4">{posData.owner}</p>
+              <p class="subtitle is-6">{posData.businessName}</p>
+            </div>
           </div>
+  
+          <hr>
+  
+          <div class="stats">
+            <div class="stat">
+              <p class="heading">Ventas Hoy</p>
+              <p class="title is-3">{posData.todaySales}</p>
+            </div>
+            <div class="stat">
+              <p class="heading">Ventas Totales</p>
+              <p class="title is-3">{posData.totalSales}</p>
+            </div>
+          </div>
+  
+          <div class="notification is-info">
+            <p class="title is-5">${posData.cashAvailable.toLocaleString()}</p>
+            <p class="subtitle is-6">Efectivo disponible</p>
+          </div>
+        </div>
+  
+        <!-- Alertas de stock -->
+        <div class="box">
+          <h2 class="title is-5">Alertas ({posData.lowStockItems})</h2>
+          {#each alerts as alert}
+            <div class="notification {alert.urgent ? 'is-danger' : 'is-warning'}">
+              <button class="delete"></button>
+              {alert.message}
+            </div>
+          {/each}
+        </div>
       </div>
-
+  
+      <!-- Columna derecha - Transacciones -->
       <div class="column is-8">
-          <!-- Últimas solicitudes -->
-          <div class="box">
-              <div class="level">
-                  <div class="level-left">
-                      <h2 class="title is-4">Ventas Reciente</h2>
-                  </div>
-                  <div class="level-right">
-                      <a href="/employer/requests" class="button is-small is-link">
-                          Ver todas
-                      </a>
-                  </div>
-              </div>
-              
-              <div class="content">
-                  <table class="table is-fullwidth is-hoverable">
-                      <thead>
-                          <tr>
-                              <th>Folio</th>
-                              <th>Importe</th>
-                              <th>Fecha</th>
-                              <th>Hora</th>
-                              <th>Acciones</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {#each recentRequests as request}
-                              <tr>
-                                  <td>{request.title}</td>
-                                  <td>{request.category}</td>
-                                  <td>{request.date}</td>
-                                  <td>
-                                      <span class="tag {request.status === 'En progreso' ? 'is-warning' : request.status === 'Pendiente' ? 'is-danger' : 'is-info'}">
-                                          {request.status}
-                                      </span>
-                                  </td>
-                                  <td>
-                                      <a href={`/employer/requests/${request.id}`} class="button is-small is-info is-outlined">
-                                          Ver detalles
-                                      </a>
-                                  </td>
-                              </tr>
-                          {/each}
-                      </tbody>
-                  </table>
-              </div>
+        <div class="box">
+          <div class="level">
+            <div class="level-left">
+              <h2 class="title is-4">Últimas Transacciones</h2>
+            </div>
+            <div class="level-right">
+              <button class="button is-link is-small">
+                Ver historial completo
+              </button>
+            </div>
           </div>
-
-          <!-- Mensajes recientes -->
-          <div class="box">
-              <div class="level">
-                  <div class="level-left">
-                      <h2 class="title is-4">Mensajes recientes</h2>
-                  </div>
-                  <div class="level-right">
-                      <a href="/employer/messages" class="button is-small is-link">
-                          Ver todos
-                      </a>
-                  </div>
-              </div>
-              
-              <div class="content">
-                  {#each recentMessages as message}
-                      <article class="message {message.read ? '' : 'is-info'}">
-                          <div class="message-header">
-                              <p>{message.from}</p>
-                              {#if !message.read}
-                                  <span class="tag is-info">Nuevo</span>
-                              {/if}
-                          </div>
-                          <div class="message-body">
-                              <p class="has-text-weight-bold">{message.subject}</p>
-                              <p>{message.preview}</p>
-                              <a href={`/employer/messages/${message.id}`} class="button is-small is-link is-outlined">
-                                  Leer mensaje
-                              </a>
-                          </div>
-                      </article>
-                  {/each}
-              </div>
+  
+          <table class="table is-fullwidth is-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Hora</th>
+                <th>Monto</th>
+                <th>Método</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each recentTransactions as t}
+                <tr>
+                  <td>#{t.id}</td>
+                  <td>{t.time}</td>
+                  <td>${t.amount.toFixed(2)}</td>
+                  <td>
+                    <span class="tag {t.method === 'Tarjeta' ? 'is-info' : 'is-success'}">
+                      {t.method}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="button is-small is-info is-outlined">
+                      Detalles
+                    </button>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+  
+        <!-- Panel rápido -->
+        <div class="box">
+          <h2 class="title is-4">Acciones Rápidas</h2>
+          <div class="buttons">
+            <button class="button is-primary is-medium">
+              <span class="icon">
+                <i class="fas fa-cash-register"></i>
+              </span>
+              <span>Nueva Venta</span>
+            </button>
+            <button class="button is-info is-medium">
+              <span class="icon">
+                <i class="fas fa-boxes"></i>
+              </span>
+              <span>Administrar Inventario</span>
+            </button>
+            <button class="button is-link is-medium">
+              <span class="icon">
+                <i class="fas fa-file-invoice-dollar"></i>
+              </span>
+              <span>Reportes</span>
+            </button>
           </div>
+        </div>
       </div>
+    </div>
   </div>
-</div>
-
-<style>
-  .stats {
+  
+  <style>
+    .stats {
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
       text-align: center;
       margin: 1.5rem 0;
-  }
-  
-  .stat {
-      padding: 0 1rem;
-  }
-  
-  .stat .heading {
-      font-size: 0.8rem;
-      color: #7a7a7a;
-  }
-  
-  .rating {
-      margin-top: 0.5rem;
-  }
-  
-  .message {
+    }
+    
+    .stat {
+      flex: 1;
+      padding: 0 0.5rem;
+    }
+    
+    .notification {
       margin-bottom: 1rem;
-  }
-  
-  .message:last-child {
-      margin-bottom: 0;
-  }
-  
-  .table {
-      margin-top: 1rem;
-  }
-</style>
+    }
+    
+    .buttons {
+      justify-content: center;
+    }
+    
+    .buttons .button {
+      margin: 0 0.5rem;
+    }
+  </style>
