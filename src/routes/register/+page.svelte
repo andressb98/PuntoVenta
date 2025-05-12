@@ -1,14 +1,36 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	let usernameRegister = '';
-	let passwordRegister = '';
-	let confirmPasswordRegister = '';
+	let username = '';
+	let password = '';
+	let confirmPassword = '';
+	let idRol: number | null = null;
+	let roles: { id: number; nombre: string }[] = [];
 	let registrationError = '';
 
+	onMount(async () => {
+		try {
+			const res = await fetch('/api/roles');
+			const data = await res.json();
+			if (res.ok) {
+				roles = data.roles;
+			} else {
+				console.error('Error al obtener roles');
+			}
+		} catch (e) {
+			console.error('Fallo en la carga de roles:', e);
+		}
+	});
+
 	async function handleRegister() {
-		if (passwordRegister !== confirmPasswordRegister) {
+		if (password !== confirmPassword) {
 			registrationError = 'Las contraseñas no coinciden.';
+			return;
+		}
+
+		if (!username || !password || idRol === null) {
+			registrationError = 'Todos los campos obligatorios deben completarse.';
 			return;
 		}
 
@@ -17,26 +39,23 @@
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					email: usernameRegister,
-					password: passwordRegister,
-					nombre: usernameRegister
+					username,
+					password,
+					id_rol: idRol
 				})
 			});
 
 			const data = await response.json();
 
 			if (!response.ok) {
-				// Muestra el error específico del backend
 				registrationError = data.error || 'Error al registrar el usuario.';
-				if (data.details) console.error('Detalles del error:', data.details);
 				return;
 			}
 
-			// Redirigir al login después del registro exitoso
-			goto('/login');
+			goto('/dashboard');
 		} catch (error) {
 			console.error('Error en el registro:', error);
-			registrationError = `Error de conexión: ${error.message}`;
+			registrationError = 'Error de conexión. Por favor intenta nuevamente.';
 		}
 	}
 
@@ -60,7 +79,7 @@
 										class="input"
 										type="text"
 										placeholder="Elige un nombre de usuario"
-										bind:value={usernameRegister}
+										bind:value={username}
 									/>
 								</div>
 							</div>
@@ -72,7 +91,7 @@
 										class="input"
 										type="password"
 										placeholder="Elige una contraseña"
-										bind:value={passwordRegister}
+										bind:value={password}
 									/>
 								</div>
 							</div>
@@ -84,8 +103,22 @@
 										class="input"
 										type="password"
 										placeholder="Confirma tu contraseña"
-										bind:value={confirmPasswordRegister}
+										bind:value={confirmPassword}
 									/>
+								</div>
+							</div>
+
+							<div class="field">
+								<label class="label">Rol*</label>
+								<div class="control">
+									<div class="select is-fullwidth">
+										<select bind:value={idRol} required>
+											<option value="" disabled selected>Selecciona un rol</option>
+											{#each roles as rol}
+												<option value={rol.id}>{rol.nombre}</option>
+											{/each}
+										</select>
+									</div>
 								</div>
 							</div>
 

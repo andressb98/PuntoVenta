@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,22 +7,515 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Producto {
-  id          Int      @id @default(autoincrement())
-  nombre      String   @db.VarChar(255)
-  descripcion String?
-  categoria   String   @db.VarChar(100)
-  precio      Decimal  @db.Decimal(10,2)
-  stock       Int      @default(0)
-  stockMinimo Int      @default(5)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Usuario {
+  id               Int                 @id @default(autoincrement())
+  nombre           String
+  contraseña      String
+  activo           Boolean             @default(true)
+  id_rol           Int
+  rol              Rol                 @relation(fields: [id_rol], references: [id])
+  bitacoras        Bitacora[]
+  historialPrecios HistorialPrecio[]
+  sesionesCaja     SesionUsuarioCaja[]
+  ventas           Venta[]
+  compras          Compra[]
+  entradas         Entrada[]
+  salidas          Salida[]
+  cotizaciones     Cotizacion[]
+  flujoCaja        FlujoCaja[]
+  pagos            Pago[]
+  vendedor         Vendedor?
+
+  @@map("usuarios")
 }
 
-model Usuario {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique @db.VarChar(255)
-  password String  @db.VarChar(255)
-  nombre   String  @db.VarChar(100)
-  rol      String  @db.VarChar(50) @default("usuario")
+model Rol {
+  id         Int         @id @default(autoincrement())
+  nombre     String
+  usuarios   Usuario[]
+  rolModulos RolModulo[]
+
+  @@map("roles")
+}
+
+model Modulo {
+  id         Int         @id @default(autoincrement())
+  nombre     String
+  rolModulos RolModulo[]
+
+  @@map("modulos")
+}
+
+model RolModulo {
+  id_rol         Int
+  id_modulo      Int
+  puede_crear    Boolean
+  puede_editar   Boolean
+  puede_eliminar Boolean
+  puede_ver      Boolean
+  rol            Rol     @relation(fields: [id_rol], references: [id])
+  modulo         Modulo  @relation(fields: [id_modulo], references: [id])
+
+  @@id([id_rol, id_modulo])
+  @@map("rol_modulo")
+}
+
+model Categoria {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  productos Producto[]
+
+  @@map("categorias")
+}
+
+model Producto {
+  id                  Int                    @id @default(autoincrement())
+  codigo              String
+  descripcion         String
+  precio              Float
+  precio_mayoreo      Float
+  costo               Float
+  iva                 Float
+  id_categoria        Int
+  stock               Int
+  unidad              String
+  modelo              String
+  stock_minimo        Int
+  categoria           Categoria              @relation(fields: [id_categoria], references: [id])
+  id_almacen          Int
+  productoProveedores ProductoProveedor[]
+  historialPrecios    HistorialPrecio[]
+  detalleVentas       DetalleVenta[]
+  detalleCompras      DetalleCompra[]
+  detalleEntradas     DetalleEntrada[]
+  detalleSalidas      DetalleSalida[]
+  movimientos         MovimientoInventario[]
+  almacen             Almacen                @relation(fields: [id_almacen], references: [id])
+
+  @@map("productos")
+}
+
+model Proveedor {
+  id                  Int                 @id @default(autoincrement())
+  nombre              String
+  productoProveedores ProductoProveedor[]
+  compras             Compra[]
+
+  @@map("proveedores")
+}
+
+model ProductoProveedor {
+  id_producto         Int
+  id_proveedor        Int
+  precio_compra       Float
+  fecha_ultima_compra DateTime
+  producto            Producto  @relation(fields: [id_producto], references: [id])
+  proveedor           Proveedor @relation(fields: [id_proveedor], references: [id])
+
+  @@id([id_producto, id_proveedor])
+  @@map("producto_proveedor")
+}
+
+model HistorialPrecio {
+  id              Int      @id @default(autoincrement())
+  id_producto     Int
+  precio_anterior Float
+  precio_nuevo    Float
+  fecha_cambio    DateTime
+  id_usuario      Int
+  motivo          String
+  producto        Producto @relation(fields: [id_producto], references: [id])
+  usuario         Usuario  @relation(fields: [id_usuario], references: [id])
+
+  @@map("historial_precios")
+}
+
+model Cliente {
+  id               Int          @id @default(autoincrement())
+  nombre           String
+  fecha_alta       DateTime
+  fecha_baja       DateTime?
+  domicilio        String
+  correo           String
+  telefono         String
+  fecha_nacimiento DateTime
+  comentarios      String
+  referencias      String
+  usa_credito      Boolean
+  credito          Credito?
+  abonos           Abono[]
+  ventas           Venta[]
+  cotizaciones     Cotizacion[]
+  pagos            Pago[]
+
+  @@map("clientes")
+}
+
+model Credito {
+  id            Int     @id @default(autoincrement())
+  id_cliente    Int     @unique
+  credito_total Float
+  disponible    Float
+  pagado        Float
+  saldo         Float
+  estatus       String
+  cliente       Cliente @relation(fields: [id_cliente], references: [id])
+  abonos        Abono[]
+
+  @@map("creditos")
+}
+
+model Abono {
+  id            Int     @id @default(autoincrement())
+  id_pago       Int
+  id_cliente    Int
+  id_credito    Int
+  importe       Float
+  saldo_antes   Float
+  saldo_despues Float
+  credito       Credito @relation(fields: [id_credito], references: [id])
+  cliente       Cliente @relation(fields: [id_cliente], references: [id])
+
+  @@map("abonos")
+}
+
+model Almacen {
+  id                Int                    @id @default(autoincrement())
+  nombre            String
+  ubicacion         String
+  almacenSucursales AlmacenSucursal[]
+  compras           Compra[]
+  entradas          Entrada[]
+  salidas           Salida[]               @relation("SalidaAlmacen")
+  salidasTraspaso   Salida[]               @relation("TraspasoAlmacen")
+  productos         Producto[]
+  movimientos       MovimientoInventario[]
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@map("almacenes")
+}
+
+model Sucursal {
+  id                Int               @id @default(autoincrement())
+  nombre            String
+  ubicacion         String
+  telefono          String
+  bitacoras         Bitacora[]
+  cajas             Caja[]
+  ventas            Venta[]
+  pagos             Pago[]
+  periodos          Periodo[]
+  cortes            Corte[]
+  almacenSucursales AlmacenSucursal[]
+
+  @@map("sucursales")
+}
+
+model AlmacenSucursal {
+  id_almacen  Int
+  id_sucursal Int
+  almacen     Almacen  @relation(fields: [id_almacen], references: [id])
+  sucursal    Sucursal @relation(fields: [id_sucursal], references: [id])
+
+  @@id([id_almacen, id_sucursal])
+  @@map("almacen_sucursal")
+}
+
+model Caja {
+  id          Int                 @id @default(autoincrement())
+  id_sucursal Int
+  nombre      String
+  efectivo    Float
+  digital     Float
+  sucursal    Sucursal            @relation(fields: [id_sucursal], references: [id])
+  sesiones    SesionUsuarioCaja[]
+  flujoCaja   FlujoCaja[]
+
+  @@map("cajas")
+}
+
+model SesionUsuarioCaja {
+  id                Int       @id @default(autoincrement())
+  id_usuario        Int
+  id_caja           Int
+  fecha_hora_inicio DateTime
+  fecha_hora_fin    DateTime?
+  usuario           Usuario   @relation(fields: [id_usuario], references: [id])
+  caja              Caja      @relation(fields: [id_caja], references: [id])
+
+  @@map("sesion_usuario_caja")
+}
+
+model Venta {
+  id            Int            @id @default(autoincrement())
+  id_cliente    Int
+  id_vendedor   Int
+  id_corte      Int?
+  id_sucursal   Int
+  id_usuario    Int
+  total         Float
+  fecha_hora    DateTime
+  descuento     Float
+  subtotal      Float
+  impuestos     Float
+  estatus       String
+  id_forma_pago Int
+  saldo_deber   Float
+  abono         Float
+  cambio        Float
+  comentarios   String
+  cliente       Cliente        @relation(fields: [id_cliente], references: [id])
+  vendedor      Vendedor       @relation(fields: [id_vendedor], references: [id])
+  usuario       Usuario        @relation(fields: [id_usuario], references: [id])
+  sucursal      Sucursal       @relation(fields: [id_sucursal], references: [id])
+  formaPago     FormaPago      @relation(fields: [id_forma_pago], references: [id])
+  detalles      DetalleVenta[]
+  flujoCaja     FlujoCaja[]
+
+  @@map("ventas")
+}
+
+model DetalleVenta {
+  id          Int      @id @default(autoincrement())
+  id_venta    Int
+  id_producto Int
+  cantidad    Int
+  precio      Float
+  descuento   Float?
+  venta       Venta    @relation(fields: [id_venta], references: [id])
+  producto    Producto @relation(fields: [id_producto], references: [id])
+
+  @@map("detalles_venta")
+}
+
+model Compra {
+  id            Int             @id @default(autoincrement())
+  fecha_emision DateTime
+  id_proveedor  Int
+  subtotal      Float
+  descuento     Float
+  impuesto      Float
+  total         Float
+  id_almacen    Int
+  estatus       String
+  forma_pago    String
+  id_usuario    Int
+  referencia    String
+  proveedor     Proveedor       @relation(fields: [id_proveedor], references: [id])
+  almacen       Almacen         @relation(fields: [id_almacen], references: [id])
+  usuario       Usuario         @relation(fields: [id_usuario], references: [id])
+  detalles      DetalleCompra[]
+
+  @@map("compras")
+}
+
+model DetalleCompra {
+  id          Int      @id @default(autoincrement())
+  id_compra   Int
+  id_producto Int
+  cantidad    Int
+  costo       Float
+  compra      Compra   @relation(fields: [id_compra], references: [id])
+  producto    Producto @relation(fields: [id_producto], references: [id])
+
+  @@map("detalles_compra")
+}
+
+model Entrada {
+  id            Int              @id @default(autoincrement())
+  fecha_emision DateTime
+  id_almacen    Int
+  importe       Float
+  observaciones String
+  id_usuario    Int
+  almacen       Almacen          @relation(fields: [id_almacen], references: [id])
+  usuario       Usuario          @relation(fields: [id_usuario], references: [id])
+  detalles      DetalleEntrada[]
+
+  @@map("entradas")
+}
+
+model DetalleEntrada {
+  id          Int      @id @default(autoincrement())
+  id_entrada  Int
+  id_producto Int
+  cantidad    Int
+  costo       Float
+  entrada     Entrada  @relation(fields: [id_entrada], references: [id])
+  producto    Producto @relation(fields: [id_producto], references: [id])
+
+  @@map("detalles_entrada")
+}
+
+model MovimientoInventario {
+  id               Int      @id @default(autoincrement())
+  id_producto      Int
+  id_almacen       Int
+  fecha            DateTime
+  tipo             String
+  cantidad         Int
+  existencia_antes Int
+  costo            Float
+  referencia       Int?
+  producto         Producto @relation(fields: [id_producto], references: [id])
+  almacen          Almacen  @relation(fields: [id_almacen], references: [id])
+
+  @@map("movimientos_inventario")
+}
+
+model Salida {
+  id                  Int             @id @default(autoincrement())
+  fecha               DateTime
+  id_almacen          Int
+  observaciones       String
+  id_usuario          Int
+  traspaso            Boolean
+  id_almacen_traspaso Int?
+  almacen             Almacen         @relation("SalidaAlmacen", fields: [id_almacen], references: [id])
+  almacenTraspaso     Almacen?        @relation("TraspasoAlmacen", fields: [id_almacen_traspaso], references: [id])
+  usuario             Usuario         @relation(fields: [id_usuario], references: [id])
+  detalles            DetalleSalida[]
+
+  @@map("salidas")
+}
+
+model DetalleSalida {
+  id          Int      @id @default(autoincrement())
+  id_salida   Int
+  id_producto Int
+  cantidad    Int
+  costo       Float
+  salida      Salida   @relation(fields: [id_salida], references: [id])
+  producto    Producto @relation(fields: [id_producto], references: [id])
+
+  @@map("detalles_salida")
+}
+
+model Cotizacion {
+  id             Int      @id @default(autoincrement())
+  fecha_emision  DateTime
+  id_vendedor    Int
+  id_cliente     Int
+  subtotal       Float
+  impuesto       Float
+  total          Float
+  forma_pago     String
+  tiempo_entrega String
+  comentarios    String
+  id_usuario     Int
+  vendedor       Vendedor @relation(fields: [id_vendedor], references: [id])
+  cliente        Cliente  @relation(fields: [id_cliente], references: [id])
+  usuario        Usuario  @relation(fields: [id_usuario], references: [id])
+
+  @@map("cotizaciones")
+}
+
+model FlujoCaja {
+  id         Int      @id @default(autoincrement())
+  concepto   String
+  tipo       String
+  importe    Float
+  fecha      DateTime
+  hora       DateTime
+  id_caja    Int
+  id_usuario Int
+  id_venta   Int?
+  id_corte   Int?
+  caja       Caja     @relation(fields: [id_caja], references: [id])
+  usuario    Usuario  @relation(fields: [id_usuario], references: [id])
+  venta      Venta?   @relation(fields: [id_venta], references: [id])
+  corte      Corte?   @relation(fields: [id_corte], references: [id])
+
+  @@map("flujo_caja")
+}
+
+model Pago {
+  id            Int       @id @default(autoincrement())
+  id_sucursal   Int
+  id_cliente    Int
+  fecha_hora    DateTime
+  monto         Float
+  id_periodo    Int
+  id_usuario    Int
+  id_forma_pago Int
+  id_corte      Int
+  sucursal      Sucursal  @relation(fields: [id_sucursal], references: [id])
+  cliente       Cliente   @relation(fields: [id_cliente], references: [id])
+  usuario       Usuario   @relation(fields: [id_usuario], references: [id])
+  formaPago     FormaPago @relation(fields: [id_forma_pago], references: [id])
+  corte         Corte     @relation(fields: [id_corte], references: [id])
+
+  @@map("pagos")
+}
+
+model Periodo {
+  id             Int      @id @default(autoincrement())
+  id_sucursal    Int
+  nombre         String
+  estado         String
+  fecha_inicio   DateTime
+  fecha_creacion DateTime
+  importe        Float
+  sucursal       Sucursal @relation(fields: [id_sucursal], references: [id])
+  cortes         Corte[]
+
+  @@map("periodos")
+}
+
+model Corte {
+  id             Int         @id @default(autoincrement())
+  id_sucursal    Int
+  periodoId      Int
+  total_efectivo Float
+  total_digital  Float
+  total_neto     Float
+  fecha_hora     DateTime
+  sucursal       Sucursal    @relation(fields: [id_sucursal], references: [id])
+  pagos          Pago[]
+  flujoCaja      FlujoCaja[]
+  periodo        Periodo     @relation(fields: [periodoId], references: [id])
+
+  @@map("cortes")
+}
+
+model Vendedor {
+  id           Int          @id @default(autoincrement())
+  nombre       String
+  comision     Float
+  id_usuario   Int          @unique
+  fecha_alta   DateTime
+  fecha_baja   DateTime?
+  usuario      Usuario      @relation(fields: [id_usuario], references: [id])
+  ventas       Venta[]
+  cotizaciones Cotizacion[]
+
+  @@map("vendedores")
+}
+
+model FormaPago {
+  id          Int     @id @default(autoincrement())
+  nombre_pago String
+  tipo        String
+  ventas      Venta[]
+  pagos       Pago[]
+
+  @@map("formas_pago")
+}
+
+model Bitacora {
+  id                   Int      @id @default(autoincrement())
+  id_usuario           Int
+  id_sucursal          Int
+  fecha_hora           DateTime
+  accion               String
+  tabla_afectada       String
+  id_registro_afectado Int
+  descripcion          String
+  ip_origen            String?
+  navegador            String?
+  usuario              Usuario  @relation(fields: [id_usuario], references: [id])
+  sucursal             Sucursal @relation(fields: [id_sucursal], references: [id])
+
+  @@map("bitacora")
 }
